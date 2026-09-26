@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -9,7 +10,8 @@ const { seedDatabase, generateTicketNumber } = require('./seed');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-const JWT_SECRET = 'service_request_secret_2024_secure_key';
+const JWT_SECRET = process.env.JWT_SECRET || 'service_request_secret_2024_secure_key';
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h';
 
 // Middleware
 app.use(cors());
@@ -46,7 +48,7 @@ app.post('/api/auth/login', (req, res) => {
     return res.status(401).json({ error: 'Invalid credentials' });
   }
 
-  const token = jwt.sign({ id: user.id, email: user.email, role: user.role, name: user.name }, JWT_SECRET, { expiresIn: '24h' });
+  const token = jwt.sign({ id: user.id, email: user.email, role: user.role, name: user.name }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
   const { password: _, ...userSafe } = user;
   res.json({ token, user: userSafe });
 });
@@ -63,7 +65,7 @@ app.post('/api/auth/register', (req, res) => {
   db.prepare('INSERT INTO users (id, name, email, password, role, department) VALUES (?, ?, ?, ?, ?, ?)')
     .run(id, name, email, hashed, 'user', department || '');
 
-  const token = jwt.sign({ id, email, role: 'user', name }, JWT_SECRET, { expiresIn: '24h' });
+  const token = jwt.sign({ id, email, role: 'user', name }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
   res.status(201).json({ token, user: { id, name, email, role: 'user', department: department || '' } });
 });
 
